@@ -3,3 +3,137 @@ const navigationStyle=document.createElement('style');navigationStyle.textConten
 const navigationLinks=[...document.querySelectorAll('.main-nav a')];const navigationSections=navigationLinks.map(link=>document.querySelector(link.getAttribute('href'))).filter(Boolean);function setActiveNavigation(id){navigationLinks.forEach(link=>link.classList.toggle('active',link.getAttribute('href')===`#${id}`))}navigationLinks.forEach(link=>link.addEventListener('click',()=>setActiveNavigation(link.getAttribute('href').slice(1))));const navigationObserver=new IntersectionObserver(entries=>{const visible=entries.filter(entry=>entry.isIntersecting).sort((a,b)=>b.intersectionRatio-a.intersectionRatio)[0];if(visible)setActiveNavigation(visible.target.id)},{rootMargin:'-25% 0px -55% 0px',threshold:[0,.2,.5]});navigationSections.forEach(section=>navigationObserver.observe(section));
 const menuButton=document.querySelector('.menu-button');const siteHeader=document.querySelector('.site-header');menuButton.addEventListener('click',()=>{siteHeader.classList.toggle('menu-open');menuButton.setAttribute('aria-expanded',siteHeader.classList.contains('menu-open'))});document.querySelectorAll('.main-nav a').forEach(link=>link.addEventListener('click',()=>{siteHeader.classList.remove('menu-open');menuButton.setAttribute('aria-expanded','false')}));
 const destinations=[{name:'Amalfi Coast',place:'Italy · Mediterranean',type:'Beach',image:'https://images.unsplash.com/photo-1533105079780-92b9be482077?auto=format&fit=crop&w=1000&q=85',price:1240},{name:'Kyoto',place:'Japan · East Asia',type:'City',image:'https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?auto=format&fit=crop&w=900&q=85',price:980},{name:'Dolomites',place:'Italy · The Alps',type:'Mountain',image:'https://images.unsplash.com/photo-1464278533981-50106e6176b1?auto=format&fit=crop&w=900&q=85',price:860},{name:'Marrakech',place:'Morocco · North Africa',type:'Adventure',image:'https://images.unsplash.com/photo-1489749798305-4fea3ae63d43?auto=format&fit=crop&w=900&q=85',price:740}];const trips=[{name:'A week in the Cyclades',meta:'GREECE · 7 DAYS',price:'FROM $1,890',image:'https://images.unsplash.com/photo-1530841377377-3ff06c0ca713?auto=format&fit=crop&w=1000&q=85'},{name:'The quiet side of Bali',meta:'INDONESIA · 10 DAYS',price:'FROM $2,140',image:'https://images.unsplash.com/photo-1537996194471-e657df975ab4?auto=format&fit=crop&w=1000&q=85'},{name:'Desert, sea & city lights',meta:'UAE · 5 DAYS',price:'FROM $1,320',image:'https://images.unsplash.com/photo-1518684079-3c830dcef090?auto=format&fit=crop&w=1000&q=85'}];let saved=[];const destinationGrid=document.querySelector('#destinationGrid');const tripGrid=document.querySelector('#tripGrid');function renderDestinations(filter='All'){destinationGrid.innerHTML=destinations.filter(item=>filter==='All'||item.type===filter).map(item=>`<article class="destination-card"><img src="${item.image}" alt="${item.name}"><button class="save-place ${saved.includes(item.name)?'saved':''}" data-save="${item.name}" aria-label="Save ${item.name}">${saved.includes(item.name)?'♥':'♡'}</button><div class="destination-content"><p>${item.place}</p><h3>${item.name}</h3></div></article>`).join('')||'<p>No destinations found yet.</p>';document.querySelectorAll('[data-save]').forEach(button=>button.addEventListener('click',()=>toggleSave(button.dataset.save)))}function renderTrips(){tripGrid.innerHTML=trips.map(item=>`<article class="trip-card"><div class="trip-image" style="background-image:url('${item.image}')"></div><div class="trip-content"><p class="trip-meta">${item.meta}<strong>${item.price}</strong></p><h3>${item.name}</h3><a class="text-link" href="#top">Explore trip <span>↗</span></a></div></article>`).join('')}function toggleSave(name){saved=saved.includes(name)?saved.filter(item=>item!==name):[...saved,name];renderDestinations(document.querySelector('.category.active').dataset.filter);document.querySelector('#savedCount').textContent=`${saved.length} SAVED`;document.querySelector('#plannerList').innerHTML=saved.length?saved.map(name=>`<div class="planner-item"><strong>${name}</strong><span>DAY ${saved.indexOf(name)+1}</span></div>`).join(''):'<p class="empty-planner">Your saved places will appear here.</p>';document.querySelector('#tripValue').textContent=`$${saved.reduce((total,name)=>total+(destinations.find(item=>item.name===name)?.price||0),0).toLocaleString()}`}document.querySelectorAll('.category').forEach(button=>button.addEventListener('click',()=>{document.querySelector('.category.active').classList.remove('active');button.classList.add('active');renderDestinations(button.dataset.filter)}));document.querySelectorAll('.search-tab').forEach(button=>button.addEventListener('click',()=>{document.querySelector('.search-tab.active').classList.remove('active');button.classList.add('active')}));document.querySelector('#searchButton').addEventListener('click',()=>{const mode=document.querySelector('.search-tab.active').dataset.mode;document.querySelector('#searchStatus').textContent=`${mode} search ready — choose your next horizon.`});document.querySelector('#shuffleTrips').addEventListener('click',()=>{trips.push(trips.shift());renderTrips()});document.querySelector('#plannerButton').addEventListener('click',()=>document.querySelector('#plannerList').scrollIntoView({behavior:'smooth',block:'center'}));renderDestinations();renderTrips();
+
+(() => {
+  const protect = (event) => {
+    const isModifier = event.ctrlKey || event.metaKey || event.altKey;
+    const key = typeof event.key === 'string' ? event.key.toLowerCase() : '';
+
+    if (['contextmenu', 'copy', 'cut', 'paste', 'dragstart', 'selectstart'].includes(event.type)) {
+      event.preventDefault();
+      event.stopPropagation();
+      return false;
+    }
+
+    if (
+      event.key === 'F12' ||
+      (event.shiftKey && ['i', 'j', 'c'].includes(key)) ||
+      (isModifier && ['c', 'x', 'v', 's', 'p', 'u', 'a', 'i', 'j', 'l', 'm'].includes(key))
+    ) {
+      event.preventDefault();
+      event.stopPropagation();
+      return false;
+    }
+
+    return true;
+  };
+
+  const styleTag = document.createElement('style');
+  styleTag.id = 'anti-copy-protect';
+  styleTag.textContent = `
+    html, body, * {
+      -webkit-user-select: none !important;
+      -moz-user-select: none !important;
+      -ms-user-select: none !important;
+      user-select: none !important;
+    }
+    img, canvas, svg, video, iframe {
+      -webkit-user-drag: none !important;
+      pointer-events: auto;
+    }
+  `;
+  if (!document.getElementById('anti-copy-protect')) {
+    document.head.appendChild(styleTag);
+  }
+
+  ['contextmenu', 'copy', 'cut', 'paste', 'dragstart', 'selectstart'].forEach((type) => {
+    document.addEventListener(type, protect, { capture: true, passive: false });
+  });
+  document.addEventListener('keydown', protect, { capture: true, passive: false });
+
+  const detectDevTools = () => {
+    const widthLeak = window.outerWidth - window.innerWidth;
+    const heightLeak = window.outerHeight - window.innerHeight;
+    if ((widthLeak > 150 || heightLeak > 150) && !document.body.dataset.protectionFlag) {
+      document.body.dataset.protectionFlag = '1';
+      document.body.style.filter = 'saturate(0.9)';
+    }
+  };
+
+  window.addEventListener('resize', detectDevTools);
+  setInterval(detectDevTools, 1200);
+})();
+
+(() => {
+  const head = document.head || document.querySelector('head');
+  const metaConfig = [
+    ['http-equiv', 'Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0'],
+    ['http-equiv', 'Pragma', 'no-cache'],
+    ['http-equiv', 'Expires', '0'],
+    ['name', 'robots', 'noindex, nofollow, noarchive'],
+    ['name', 'referrer', 'no-referrer']
+  ];
+
+  metaConfig.forEach(([attr, key, value]) => {
+    const selector = `meta[${attr}="${key}"]`;
+    let tag = document.querySelector(selector);
+    if (!tag) {
+      tag = document.createElement('meta');
+      tag.setAttribute(attr, key);
+      head.appendChild(tag);
+    }
+    tag.setAttribute('content', value);
+  });
+
+  const styleTag = document.createElement('style');
+  styleTag.id = 'anti-copy-extended';
+  styleTag.textContent = `
+    body::before {
+      content: 'CONFIDENTIAL';
+      position: fixed;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      z-index: 2147483646;
+      font-size: min(10vw, 120px);
+      font-weight: 800;
+      letter-spacing: 0.2em;
+      color: rgba(255,255,255,0.06);
+      pointer-events: none;
+      transform: rotate(-18deg);
+      user-select: none;
+      white-space: nowrap;
+      text-transform: uppercase;
+    }
+    img, svg, canvas, video, picture, source, iframe, embed, object {
+      user-select: none !important;
+      -webkit-user-select: none !important;
+      -webkit-user-drag: none !important;
+      drag: none !important;
+      pointer-events: none !important;
+      max-width: 100%;
+    }
+    img, svg, canvas, video {
+      filter: saturate(0.95) contrast(1.02);
+    }
+  `;
+  if (!document.getElementById('anti-copy-extended')) {
+    document.head.appendChild(styleTag);
+  }
+
+  document.querySelectorAll('img, svg, canvas, video, picture, source, iframe, embed, object').forEach((node) => {
+    node.setAttribute('draggable', 'false');
+    node.setAttribute('loading', 'eager');
+  });
+
+  const stopMedia = (event) => {
+    if (event.target && ['IMG', 'SVG', 'CANVAS', 'VIDEO', 'PICTURE', 'SOURCE', 'IFRAME', 'EMBED', 'OBJECT'].includes(event.target.tagName)) {
+      event.preventDefault();
+      return false;
+    }
+    return true;
+  };
+
+  document.addEventListener('dragstart', stopMedia, { capture: true, passive: false });
+  document.addEventListener('mousedown', stopMedia, { capture: true, passive: false });
+})();
